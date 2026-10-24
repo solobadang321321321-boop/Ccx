@@ -1,0 +1,37 @@
+local MarketplaceService = game:GetService("MarketplaceService")
+local Players = game:GetService("Players")
+local ServerStorage = game:GetService("ServerStorage")
+
+local GAMEPASS_ID = 00000000 -- Replace with your Gamepass ID
+local TOOL_NAME = "MyGamepassTool" -- Must match the tool name in ServerStorage
+
+local function giveTool(player)
+	local tool = ServerStorage:FindFirstChild(TOOL_NAME)
+	if tool and player.Character then
+		local backpack = player:FindFirstChild("Backpack")
+		if backpack and not backpack:FindFirstChild(TOOL_NAME) then
+			tool:Clone().Parent = backpack
+		end
+	end
+end
+
+-- Check when player joins
+Players.PlayerAdded:Connect(function(player)
+	player.CharacterAdded:Connect(function()
+		local hasPass = false
+		local success, err = pcall(function()
+			hasPass = MarketplaceService:UserOwnsGamePassAsync(player.UserId, GAMEPASS_ID)
+		end)
+		
+		if success and hasPass then
+			giveTool(player)
+		end
+	end)
+end)
+
+-- Handle prompt purchase during gameplay
+MarketplaceService.PromptGamePassPurchaseFinished:Connect(function(player, purchasedPassId, purchaseSuccess)
+	if purchaseSuccess and purchasedPassId == GAMEPASS_ID then
+		giveTool(player)
+	end
+end)
